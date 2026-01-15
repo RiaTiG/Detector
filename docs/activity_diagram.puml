@@ -1,0 +1,99 @@
+@startuml Диаграмма активностей - Обучение модели
+
+|Пользователь|
+start
+:Выбрать источник данных;
+
+|Система|
+if (Тип источника?) then (Директории)
+  :Загрузить тексты из\ndata/human/ и data/ai/;
+elseif (CSV файл) then
+  :Загрузить CSV\nсо столбцами text и label;
+elseif (Создать пример) then
+  :Сгенерировать\nпримеры текстов;
+endif
+
+:Валидация данных;
+if (Данных достаточно?) then (нет)
+  #Pink:Ошибка: Недостаточно данных;
+  stop
+else (да)
+  :Разделить на train/test\n(80%/20%);
+endif
+
+|Feature Extractor|
+:Извлечь признаки\nиз каждого текста;
+note right
+  Стилометрические:
+  - sentence_length_mean
+  - type_token_ratio
+  - hapax_legomena_ratio
+
+  Синтаксические:
+  - syntax_tree_depth_mean
+  - comma_patterns
+
+  Семантические:
+  - named_entity_density
+  - pronoun_patterns
+end note
+
+:Нормализовать признаки;
+
+|Classifier|
+if (Тип модели?) then (XGBoost)
+  :Создать XGBoost модель;
+  :Настроить гиперпараметры\n(n_estimators, max_depth);
+  :Обучить модель;
+elseif (Neural Network) then
+  :Создать нейронную сеть\n(128-64-32 слоя);
+  :Настроить оптимизатор;
+  repeat
+    :Эпоха обучения;
+    :Валидация;
+  repeat while (Эпохи не закончились?)
+elseif (Both) then
+  fork
+    :Обучить XGBoost;
+  fork again
+    :Обучить Neural Network;
+  end fork
+endif
+
+:Предсказание на test set;
+
+|Evaluator|
+:Вычислить метрики;
+note right
+  - Accuracy
+  - Precision
+  - Recall
+  - F1-Score
+  - AUC-ROC
+end note
+
+|Visualizer|
+fork
+  :Feature Importance график;
+fork again
+  :Confusion Matrix;
+fork again
+  :ROC Curve;
+fork again
+  :Feature Distributions;
+end fork
+
+if (Обучены обе модели?) then (да)
+  :Model Comparison график;
+endif
+
+|Storage|
+:Сохранить модели\nв models/;
+:Сохранить скейлер;
+:Сохранить отчеты\nв results/;
+
+|Пользователь|
+:Просмотр результатов;
+stop
+
+@enduml

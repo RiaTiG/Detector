@@ -1,0 +1,185 @@
+@startuml Class Diagram - AI Text Detector
+
+' Стили
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor LightYellow
+    BorderColor Black
+    ArrowColor Black
+}
+
+' Главный интерфейс
+class AITextDetector {
+    - model: XGBoostClassifier | NeuralNetTrainer
+    - feature_extractor: FeatureExtractor
+    - scaler: StandardScaler
+    - model_type: str
+    - language: str
+
+    + __init__(model_type, model_path, language)
+    + detect(text: str): Dict
+    + explain_prediction(text: str, top_n: int): Dict
+    + batch_detect(texts: List[str]): List[Dict]
+    - _load_model(model_path: str): Model
+    - _preprocess_text(text: str): str
+}
+
+' Извлечение признаков
+class FeatureExtractor {
+    - nlp: Language
+    - language: str
+    - stopwords: Set[str]
+
+    + __init__(language: str)
+    + extract_features(text: str): Dict[str, float]
+    + extract_stylometric_features(text: str): Dict
+    + extract_syntactic_features(text: str): Dict
+    + extract_semantic_features(text: str): Dict
+    - _tokenize(text: str): List[str]
+    - _get_sentences(text: str): List[str]
+}
+
+' Облегченная версия (без spaCy)
+class FeatureExtractorLite {
+    - language: str
+    - stopwords: Set[str]
+
+    + __init__(language: str)
+    + extract_features(text: str): Dict[str, float]
+    + extract_stylometric_features(text: str): Dict
+    + extract_basic_syntactic_features(text: str): Dict
+    + extract_basic_semantic_features(text: str): Dict
+}
+
+' Классификатор XGBoost
+class XGBoostClassifier {
+    - model: XGBClassifier
+    - n_estimators: int
+    - max_depth: int
+    - learning_rate: float
+    - min_child_weight: int
+
+    + __init__(n_estimators, max_depth, ...)
+    + train(X_train, y_train)
+    + predict(X: np.ndarray): np.ndarray
+    + predict_proba(X: np.ndarray): np.ndarray
+    + get_feature_importance(): Dict[str, float]
+    + save(path: str)
+    + load(path: str)
+}
+
+' Нейронная сеть
+class NeuralNetTrainer {
+    - model: nn.Module
+    - optimizer: torch.optim.Optimizer
+    - criterion: nn.Module
+    - hidden_sizes: List[int]
+    - dropout: float
+    - learning_rate: float
+    - batch_size: int
+    - epochs: int
+
+    + __init__(input_size, hidden_sizes, ...)
+    + train(X_train, y_train, X_val, y_val)
+    + predict(X: np.ndarray): np.ndarray
+    + predict_proba(X: np.ndarray): np.ndarray
+    + save(path: str)
+    + load(path: str)
+    - _build_model(input_size: int): nn.Module
+}
+
+' Модель нейронной сети
+class TextClassifierNet {
+    - layers: nn.ModuleList
+    - dropout: nn.Dropout
+
+    + __init__(input_size, hidden_sizes, dropout)
+    + forward(x: torch.Tensor): torch.Tensor
+}
+
+' Загрузчик данных
+class DatasetLoader {
+    - data_dir: str
+    - csv_path: str
+
+    + __init__(data_dir, csv_path)
+    + load_from_directories(): Tuple[List, List]
+    + load_from_csv(): Tuple[List, List]
+    + create_sample_dataset(): Tuple[List, List]
+    + split_data(texts, labels, test_size): Tuple
+    + validate_dataset(texts, labels): bool
+    - _read_text_file(path: str): str
+}
+
+' Визуализатор
+class Visualizer {
+    - output_dir: str
+
+    + __init__(output_dir: str)
+    + plot_feature_importance(importance: Dict, title: str)
+    + plot_confusion_matrix(y_true, y_pred, labels: List)
+    + plot_roc_curve(y_true, y_proba)
+    + plot_feature_distributions(X, y, feature_names)
+    + plot_model_comparison(metrics: Dict)
+    + save_classification_report(y_true, y_pred, path: str)
+    - _ensure_output_dir()
+}
+
+' Утилиты для оценки
+class MetricsCalculator <<utility>> {
+    + {static} calculate_accuracy(y_true, y_pred): float
+    + {static} calculate_precision(y_true, y_pred): float
+    + {static} calculate_recall(y_true, y_pred): float
+    + {static} calculate_f1(y_true, y_pred): float
+    + {static} calculate_auc(y_true, y_proba): float
+    + {static} calculate_confusion_matrix(y_true, y_pred): np.ndarray
+}
+
+' Отношения между классами
+AITextDetector *-- FeatureExtractor : содержит
+AITextDetector *-- XGBoostClassifier : использует
+AITextDetector *-- NeuralNetTrainer : использует
+AITextDetector ..> MetricsCalculator : использует
+
+FeatureExtractor <|-- FeatureExtractorLite : наследует
+
+NeuralNetTrainer *-- TextClassifierNet : содержит
+
+DatasetLoader ..> FeatureExtractor : использует для предобработки
+
+Visualizer ..> MetricsCalculator : использует
+
+' Примечания
+note right of AITextDetector
+  Главный класс для детекции AI текстов.
+  Загружает модель и обеспечивает
+  интерфейс для анализа текстов.
+end note
+
+note right of FeatureExtractor
+  Извлекает 16+ признаков из текста:
+  - Стилометрические (6+)
+  - Синтаксические (5+)
+  - Семантические (5+)
+end note
+
+note bottom of FeatureExtractorLite
+  Облегченная версия для Python 3.14+
+  без зависимости от spaCy
+end note
+
+note left of XGBoostClassifier
+  Градиентный бустинг
+  - Быстрое обучение
+  - Интерпретируемые результаты
+  - Рекомендуется для большинства задач
+end note
+
+note left of NeuralNetTrainer
+  Многослойная нейронная сеть
+  - Архитектура: 128-64-32
+  - Dropout для регуляризации
+  - Выявляет сложные паттерны
+end note
+
+@enduml

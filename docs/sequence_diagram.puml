@@ -1,0 +1,84 @@
+@startuml Диаграмма последовательности - Детекция текста
+
+actor "Пользователь" as User
+participant "Detector" as Detector
+participant "FeatureExtractor" as FE
+participant "Classifier\n(XGBoost/Neural)" as Classifier
+participant "Visualizer" as Viz
+database "Model Storage" as Storage
+
+== Инициализация ==
+User -> Detector: Загрузить детектор(model_type, model_path)
+activate Detector
+Detector -> Storage: Загрузить модель
+activate Storage
+Storage --> Detector: model
+deactivate Storage
+Detector -> FE: Инициализировать экстрактор
+activate FE
+FE --> Detector: готов
+deactivate FE
+Detector --> User: Детектор готов
+deactivate Detector
+
+== Анализ текста ==
+User -> Detector: detect(text)
+activate Detector
+
+Detector -> FE: extract_features(text)
+activate FE
+
+FE -> FE: Анализ стилометрии
+note right
+  - Длина предложений
+  - Type-Token Ratio
+  - Hapax legomena
+  - Плотность пунктуации
+end note
+
+FE -> FE: Анализ синтаксиса
+note right
+  - Глубина дерева
+  - Паттерны запятых
+  - Длина зависимостей
+end note
+
+FE -> FE: Анализ семантики
+note right
+  - Именованные сущности
+  - Паттерны местоимений
+  - Модальные глаголы
+end note
+
+FE --> Detector: features_dict
+deactivate FE
+
+Detector -> Classifier: predict(features)
+activate Classifier
+Classifier -> Classifier: Классификация
+Classifier --> Detector: probability, prediction
+deactivate Classifier
+
+Detector -> Detector: Формирование результата
+Detector --> User: result\n{prediction, confidence, probability}
+deactivate Detector
+
+== Объяснение предсказания ==
+User -> Detector: explain_prediction(text, top_n)
+activate Detector
+
+Detector -> FE: extract_features(text)
+activate FE
+FE --> Detector: features
+deactivate FE
+
+Detector -> Classifier: get_feature_importance()
+activate Classifier
+Classifier --> Detector: feature_importance
+deactivate Classifier
+
+Detector -> Detector: Сортировка признаков\nпо важности
+Detector --> User: top_features\nс значениями и важностью
+deactivate Detector
+
+@enduml

@@ -1,0 +1,74 @@
+@startuml UseCase Diagram - AI Text Detector
+
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Исследователь" as researcher
+actor "Разработчик" as developer
+actor "Конечный пользователь" as user
+
+rectangle "AI Text Detector System" {
+
+  usecase "Обучить модель\nна датасете" as UC1
+  usecase "Детектировать текст" as UC2
+  usecase "Получить объяснение\nпредсказания" as UC3
+  usecase "Визуализировать\nрезультаты" as UC4
+  usecase "Извлечь признаки\nиз текста" as UC5
+  usecase "Сравнить модели" as UC6
+  usecase "Экспортировать\nмодель" as UC7
+  usecase "Загрузить датасет" as UC8
+  usecase "Анализировать\nважность признаков" as UC9
+  usecase "Настроить параметры\nмодели" as UC10
+  usecase "Пакетная обработка\nтекстов" as UC11
+  usecase "Интерактивный\nанализ" as UC12
+
+  ' Связи для Исследователя
+  researcher --> UC1
+  researcher --> UC4
+  researcher --> UC6
+  researcher --> UC9
+  researcher --> UC10
+
+  ' Связи для Разработчика
+  developer --> UC1
+  developer --> UC2
+  developer --> UC5
+  developer --> UC7
+  developer --> UC11
+
+  ' Связи для Конечного пользователя
+  user --> UC2
+  user --> UC3
+  user --> UC12
+
+  ' Отношения include
+  UC1 ..> UC8 : <<include>>
+  UC1 ..> UC5 : <<include>>
+  UC2 ..> UC5 : <<include>>
+  UC4 ..> UC9 : <<include>>
+
+  ' Отношения extend
+  UC2 ..> UC3 : <<extend>>
+  UC1 ..> UC6 : <<extend>>
+  UC2 ..> UC11 : <<extend>>
+  UC2 ..> UC12 : <<extend>>
+}
+
+note right of UC1
+  Обучение моделей XGBoost
+  или нейронных сетей
+  на человеческих и AI текстах
+end note
+
+note right of UC2
+  Определение вероятности,
+  что текст сгенерирован AI
+end note
+
+note right of UC5
+  Извлечение стилометрических,
+  синтаксических и семантических
+  признаков
+end note
+
+@enduml
